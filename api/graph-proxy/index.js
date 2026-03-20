@@ -41,8 +41,8 @@ app.http('graph-proxy', {
       return { status: 400, body: 'Missing "path"', headers: corsHeaders };
     }
 
-    // Validate path (only allow /groups and /users endpoints)
-    const allowed = /^\/(groups|users|directoryObjects)(\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/?]*)?$/;
+    // Validate path (only allow /groups, /users, /directoryObjects endpoints)
+    const allowed = /^\/(groups|users|directoryObjects)/;
     if (!allowed.test(path)) {
       context.warn('Blocked path: ' + path);
       return { status: 403, body: 'Path not allowed', headers: corsHeaders };
