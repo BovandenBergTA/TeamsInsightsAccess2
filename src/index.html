@@ -416,7 +416,7 @@
     <p>Enter your app registration credentials. These are stored only in your browser's session — never sent anywhere except your own API proxy.</p>
 
     <div class="note">
-      ⚠ This app expects a backend proxy at <code>/api/graph</code> that holds your client secret and forwards Graph API calls. See <code>README.md</code> for the Azure Function setup.
+      ⚠ This app expects a backend proxy at <code>/api/graph-proxy</code> that holds your client secret and forwards Graph API calls. See <code>README.md</code> for the Azure Function setup.
     </div>
 
     <label>Tenant ID</label>
@@ -426,7 +426,7 @@
     <input type="text" id="cfg-client" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
 
     <label>API proxy base URL (optional override)</label>
-    <input type="text" id="cfg-proxy" placeholder="/api/graph" value="/api/graph" />
+    <input type="text" id="cfg-proxy" placeholder="/api/graph-proxy" value="/api/graph-proxy" />
 
     <div class="actions">
       <button onclick="closeConfig()">Cancel</button>
@@ -461,7 +461,7 @@ function openConfig() {
   if (config) {
     document.getElementById('cfg-tenant').value = config.tenantId || '';
     document.getElementById('cfg-client').value = config.clientId || '';
-    document.getElementById('cfg-proxy').value  = config.proxy    || '/api/graph';
+    document.getElementById('cfg-proxy').value  = config.proxy    || '/api/graph-proxy';
   }
   document.getElementById('modal').classList.remove('hidden');
 }
@@ -472,7 +472,7 @@ function saveConfig() {
   config = {
     tenantId: document.getElementById('cfg-tenant').value.trim(),
     clientId: document.getElementById('cfg-client').value.trim(),
-    proxy:    document.getElementById('cfg-proxy').value.trim() || '/api/graph',
+    proxy:    document.getElementById('cfg-proxy').value.trim() || '/api/graph-proxy',
   };
   sessionStorage.setItem('teamsmap_cfg', JSON.stringify(config));
   closeConfig();
@@ -503,7 +503,7 @@ function updateStatusConnected() {
 
 // ── API helpers ────────────────────────────────────────────────────────────
 // Calls go to your Azure Function proxy which holds the client_secret.
-// Proxy should accept: POST /api/graph  { path: "/groups?$filter=..." }
+// Proxy should accept: POST /api/graph-proxy  { path: "/groups?$filter=..." }
 // and return the Graph API JSON response.
 async function graphCall(path) {
   const res = await fetch(config.proxy, {
