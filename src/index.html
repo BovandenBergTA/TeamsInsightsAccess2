@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teams Structure</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d0f14;
+      --surface:  #13161e;
+      --border:   #1f2433;
+      --accent:   #4f7cff;
+      --accent2:  #7c4fff;
+      --text:     #e2e6f0;
+      --muted:    #5a6380;
+      --guest:    #ff6b4f;
+      --member:   #4fffb0;
+      --font-ui:  'Sora', sans-serif;
+      --font-mono:'DM Mono', monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      font-size: 14px;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: 56px 1fr;
+      grid-template-columns: 300px 1fr;
+      grid-template-areas:
+        "header header"
+        "sidebar main";
+    }
+
+    /* ── Header ── */
+    header {
+      grid-area: header;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      background: var(--surface);
+    }
+    header .logo {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      color: var(--text);
+    }
+    header .logo span { color: var(--accent); }
+    header .pill {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: #1a1f2e;
+      border: 1px solid var(--border);
+      padding: 2px 10px;
+      border-radius: 20px;
+      color: var(--muted);
+    }
+    header .pill.connected { border-color: var(--member); color: var(--member); }
+    header .spacer { flex: 1; }
+    header button {
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      transition: background .15s;
+    }
+    header button:hover { background: rgba(79,124,255,.12); }
+    header button.danger { border-color: var(--guest); color: var(--guest); }
+    header button.danger:hover { background: rgba(255,107,79,.1); }
+
+    /* ── Sidebar ── */
+    aside {
+      grid-area: sidebar;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sidebar-header span {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .sidebar-header .count {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: #1a1f2e;
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 10px;
+      color: var(--text);
+    }
+    .group-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    .group-list::-webkit-scrollbar { width: 4px; }
+    .group-list::-webkit-scrollbar-track { background: transparent; }
+    .group-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .group-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .12s;
+      border: 1px solid transparent;
+      margin-bottom: 2px;
+    }
+    .group-item:hover { background: #1a1f2e; }
+    .group-item.active {
+      background: rgba(79,124,255,.1);
+      border-color: rgba(79,124,255,.3);
+    }
+    .group-item .name {
+      font-size: 13px;
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text);
+    }
+    .group-item .meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+    .group-item .meta .badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      margin-left: 4px;
+    }
+    .badge.members { background: rgba(79,255,176,.1); color: var(--member); }
+    .badge.guests   { background: rgba(255,107,79,.1);  color: var(--guest); }
+
+    /* ── Main ── */
+    main {
+      grid-area: main;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* Empty / loading states */
+    .state-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      pointer-events: none;
+    }
+    .state-overlay.hidden { display: none; }
+    .state-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: #13161e;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .state-title { font-size: 15px; font-weight: 600; color: var(--text); }
+    .state-sub   { font-size: 13px; color: var(--muted); text-align: center; max-width: 300px; }
+
+    /* Spinner */
+    .spinner {
+      width: 32px; height: 32px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── SVG Tree ── */
+    #tree-svg {
+      width: 100%; height: 100%;
+      display: block;
+    }
+    .node circle {
+      stroke-width: 1.5;
+      transition: r .2s;
+    }
+    .node.group circle   { fill: #1a1f2e; stroke: var(--accent); }
+    .node.member circle  { fill: #0f1a14; stroke: var(--member); }
+    .node.guest circle   { fill: #1a100e; stroke: var(--guest); }
+    .node.subgroup circle { fill: #1a1730; stroke: var(--accent2); }
+    .node text {
+      font-family: var(--font-ui);
+      font-size: 12px;
+      fill: var(--text);
+      pointer-events: none;
+    }
+    .node text.label-sub {
+      font-size: 10px;
+      fill: var(--muted);
+    }
+    .link {
+      fill: none;
+      stroke: var(--border);
+      stroke-width: 1;
+    }
+    .link.member-link { stroke: rgba(79,255,176,.2); }
+    .link.guest-link  { stroke: rgba(255,107,79,.2); }
+    .link.group-link  { stroke: rgba(79,124,255,.25); }
+
+    /* ── Config modal ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.7);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal-backdrop.hidden { display: none; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      width: 440px;
+      max-width: 95vw;
+    }
+    .modal h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .modal p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 22px;
+      line-height: 1.6;
+    }
+    .modal label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .modal input {
+      width: 100%;
+      background: #0d0f14;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text);
+      margin-bottom: 14px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .modal input:focus { border-color: var(--accent); }
+    .modal .note {
+      background: rgba(79,124,255,.07);
+      border: 1px solid rgba(79,124,255,.2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #8aa4ff;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .modal .actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .modal .actions button {
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      transition: all .15s;
+    }
+    .modal .actions button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .modal .actions button.primary:hover { background: #3d6aff; }
+
+    /* ── Tooltip ── */
+    #tooltip {
+      position: fixed;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 50;
+      opacity: 0;
+      transition: opacity .15s;
+      max-width: 220px;
+    }
+    #tooltip.visible { opacity: 1; }
+    #tooltip .tip-name  { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+    #tooltip .tip-type  { color: var(--muted); margin-bottom: 6px; }
+    #tooltip .tip-row   { display: flex; justify-content: space-between; gap: 12px; }
+    #tooltip .tip-label { color: var(--muted); }
+    #tooltip .tip-val   { font-family: var(--font-mono); }
+
+    /* ── Legend ── */
+    .legend {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .legend-row { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="logo">Teams<span>Map</span></div>
+  <div class="pill" id="status-pill">not connected</div>
+  <div class="spacer"></div>
+  <button id="btn-connect" onclick="openConfig()">Configure API</button>
+  <button id="btn-disconnect" class="danger hidden" onclick="disconnect()">Disconnect</button>
+</header>
+
+<!-- Sidebar -->
+<aside>
+  <div class="sidebar-header">
+    <span>Teams Groups</span>
+    <span class="count" id="group-count">0</span>
+  </div>
+  <div class="group-list" id="group-list"></div>
+</aside>
+
+<!-- Main canvas -->
+<main>
+  <svg id="tree-svg"></svg>
+
+  <div class="state-overlay" id="state-empty">
+    <div class="state-icon">⬡</div>
+    <div class="state-title">No data yet</div>
+    <div class="state-sub">Configure your app registration to load Teams groups from Microsoft Graph.</div>
+  </div>
+
+  <div class="state-overlay hidden" id="state-loading">
+    <div class="spinner"></div>
+    <div class="state-title">Loading groups…</div>
+    <div class="state-sub" id="loading-detail">Fetching Teams groups</div>
+  </div>
+
+  <div class="state-overlay hidden" id="state-select">
+    <div class="state-icon">←</div>
+    <div class="state-title">Select a group</div>
+    <div class="state-sub">Click a group in the sidebar to visualize its structure and members.</div>
+  </div>
+
+  <div class="legend" id="legend" style="display:none">
+    <div class="legend-row"><div class="legend-dot" style="border-color:#4f7cff;background:#1a1f2e"></div> Team / subgroup</div>
+    <div class="legend-row"><div class="legend-dot" style="border-color:#4fffb0;background:#0f1a14"></div> Member</div>
+    <div class="legend-row"><div class="legend-dot" style="border-color:#ff6b4f;background:#1a100e"></div> Guest</div>
+  </div>
+</main>
+
+<!-- Config modal -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <h2>Connect to Microsoft Graph</h2>
+    <p>Enter your app registration credentials. These are stored only in your browser's session — never sent anywhere except your own API proxy.</p>
+
+    <div class="note">
+      ⚠ This app expects a backend proxy at <code>/api/graph</code> that holds your client secret and forwards Graph API calls. See <code>README.md</code> for the Azure Function setup.
+    </div>
+
+    <label>Tenant ID</label>
+    <input type="text" id="cfg-tenant" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+
+    <label>Client ID</label>
+    <input type="text" id="cfg-client" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+
+    <label>API proxy base URL (optional override)</label>
+    <input type="text" id="cfg-proxy" placeholder="/api/graph" value="/api/graph" />
+
+    <div class="actions">
+      <button onclick="closeConfig()">Cancel</button>
+      <button class="primary" onclick="saveConfig()">Connect & Load</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div id="tooltip">
+  <div class="tip-name" id="tip-name"></div>
+  <div class="tip-type" id="tip-type"></div>
+  <div class="tip-row">
+    <span class="tip-label">UPN</span>
+    <span class="tip-val" id="tip-upn" style="font-size:11px"></span>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let config = JSON.parse(sessionStorage.getItem('teamsmap_cfg') || 'null');
+let groups = [];
+let activeGroupId = null;
+
+// ── Init ───────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (config) { updateStatusConnected(); loadGroups(); }
+});
+
+// ── Config modal ───────────────────────────────────────────────────────────
+function openConfig() {
+  if (config) {
+    document.getElementById('cfg-tenant').value = config.tenantId || '';
+    document.getElementById('cfg-client').value = config.clientId || '';
+    document.getElementById('cfg-proxy').value  = config.proxy    || '/api/graph';
+  }
+  document.getElementById('modal').classList.remove('hidden');
+}
+function closeConfig() {
+  document.getElementById('modal').classList.add('hidden');
+}
+function saveConfig() {
+  config = {
+    tenantId: document.getElementById('cfg-tenant').value.trim(),
+    clientId: document.getElementById('cfg-client').value.trim(),
+    proxy:    document.getElementById('cfg-proxy').value.trim() || '/api/graph',
+  };
+  sessionStorage.setItem('teamsmap_cfg', JSON.stringify(config));
+  closeConfig();
+  updateStatusConnected();
+  loadGroups();
+}
+function disconnect() {
+  config = null;
+  groups = [];
+  activeGroupId = null;
+  sessionStorage.removeItem('teamsmap_cfg');
+  document.getElementById('status-pill').textContent = 'not connected';
+  document.getElementById('status-pill').classList.remove('connected');
+  document.getElementById('btn-connect').classList.remove('hidden');
+  document.getElementById('btn-disconnect').classList.add('hidden');
+  document.getElementById('group-list').innerHTML = '';
+  document.getElementById('group-count').textContent = '0';
+  document.getElementById('legend').style.display = 'none';
+  show('state-empty');
+  clearSvg();
+}
+function updateStatusConnected() {
+  document.getElementById('status-pill').textContent = 'connected · ' + (config.tenantId || '').slice(0,8) + '…';
+  document.getElementById('status-pill').classList.add('connected');
+  document.getElementById('btn-connect').classList.add('hidden');
+  document.getElementById('btn-disconnect').classList.remove('hidden');
+}
+
+// ── API helpers ────────────────────────────────────────────────────────────
+// Calls go to your Azure Function proxy which holds the client_secret.
+// Proxy should accept: POST /api/graph  { path: "/groups?$filter=..." }
+// and return the Graph API JSON response.
+async function graphCall(path) {
+  const res = await fetch(config.proxy, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenantId: config.tenantId, clientId: config.clientId, path }),
+  });
+  if (!res.ok) throw new Error(`Proxy error ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+// ── Load groups ────────────────────────────────────────────────────────────
+async function loadGroups() {
+  show('state-loading');
+  setLoading('Fetching Teams-enabled groups…');
+  try {
+    // Filter to M365 groups with Teams provisioned
+    const data = await graphCall(
+      "/groups?$filter=resourceProvisioningOptions/Any(x:x eq 'Team')&$select=id,displayName,description,mail,membershipRule&$top=100"
+    );
+    groups = data.value || [];
+    renderSidebar();
+    show('state-select');
+    document.getElementById('group-count').textContent = groups.length;
+  } catch (e) {
+    show('state-empty');
+    alert('Failed to load groups: ' + e.message + '\n\nMake sure your API proxy is running and has the required Graph permissions (Group.Read.All, GroupMember.Read.All).');
+  }
+}
+
+function renderSidebar() {
+  const list = document.getElementById('group-list');
+  list.innerHTML = '';
+  groups.forEach(g => {
+    const el = document.createElement('div');
+    el.className = 'group-item';
+    el.dataset.id = g.id;
+    el.innerHTML = `
+      <div class="name">${esc(g.displayName)}</div>
+      <div class="meta">${esc(g.mail || g.id.slice(0,8)+'…')}</div>`;
+    el.addEventListener('click', () => selectGroup(g));
+    list.appendChild(el);
+  });
+}
+
+// ── Select group & load members ────────────────────────────────────────────
+async function selectGroup(group) {
+  activeGroupId = group.id;
+  document.querySelectorAll('.group-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === group.id);
+  });
+  show('state-loading');
+  setLoading('Loading members for ' + group.displayName + '…');
+  clearSvg();
+
+  try {
+    // Fetch members and owners in parallel
+    const [membersData, nestedData] = await Promise.all([
+      graphCall(`/groups/${group.id}/members?$select=id,displayName,userPrincipalName,userType,mail&$top=200`),
+      graphCall(`/groups/${group.id}/memberOf?$select=id,displayName,groupTypes&$top=50`).catch(() => ({ value: [] })),
+    ]);
+
+    const members = membersData.value || [];
+    const parentGroups = (nestedData.value || []).filter(g =>
+      g['@odata.type'] === '#microsoft.graph.group' && g.id !== group.id
+    );
+
+    // Build tree data
+    const treeData = buildTree(group, members, parentGroups);
+    hide('state-loading');
+    document.getElementById('legend').style.display = 'flex';
+    renderTree(treeData, group);
+
+    // Update sidebar badges
+    const guestCount   = members.filter(m => m.userType === 'Guest').length;
+    const memberCount  = members.length - guestCount;
+    const listItem = document.querySelector(`.group-item[data-id="${group.id}"] .meta`);
+    if (listItem) {
+      listItem.innerHTML = `${esc(group.mail || group.id.slice(0,8)+'…')}
+        <span class="badge members">${memberCount}m</span>
+        ${guestCount ? `<span class="badge guests">${guestCount}g</span>` : ''}`;
+    }
+  } catch (e) {
+    show('state-empty');
+    alert('Failed to load members: ' + e.message);
+  }
+}
+
+// ── Tree builder ───────────────────────────────────────────────────────────
+function buildTree(group, members, parentGroups) {
+  const root = {
+    id: group.id,
+    name: group.displayName,
+    type: 'group',
+    children: [],
+  };
+
+  // Add parent/nested group nodes
+  parentGroups.slice(0, 5).forEach(g => {
+    root.children.push({ id: g.id, name: g.displayName, type: 'subgroup', children: [] });
+  });
+
+  // Add members
+  members.forEach(m => {
+    root.children.push({
+      id: m.id,
+      name: m.displayName || m.mail || 'Unknown',
+      upn: m.userPrincipalName || '',
+      type: m.userType === 'Guest' ? 'guest' : 'member',
+      children: [],
+    });
+  });
+
+  return root;
+}
+
+// ── D3 Tree renderer ───────────────────────────────────────────────────────
+function renderTree(data, group) {
+  const svg = d3.select('#tree-svg');
+  svg.selectAll('*').remove();
+
+  const container = document.getElementById('tree-svg').parentElement;
+  const W = container.clientWidth;
+  const H = container.clientHeight;
+
+  const g = svg.append('g');
+
+  // Zoom
+  const zoom = d3.zoom().scaleExtent([0.2, 3]).on('zoom', e => g.attr('transform', e.transform));
+  svg.call(zoom);
+
+  const root = d3.hierarchy(data);
+  const nodeCount = root.descendants().length;
+
+  // Use radial layout for large groups, tree for small
+  if (nodeCount > 30) {
+    renderRadial(g, root, W, H, zoom, svg);
+  } else {
+    renderVerticalTree(g, root, W, H, zoom, svg);
+  }
+}
+
+function renderVerticalTree(g, root, W, H, zoom, svg) {
+  const treeLayout = d3.tree().size([W - 120, H - 120]);
+  treeLayout(root);
+
+  // Links
+  g.selectAll('.link')
+    .data(root.links())
+    .join('path')
+    .attr('class', d => {
+      const t = d.target.data.type;
+      return 'link ' + (t === 'guest' ? 'guest-link' : t === 'subgroup' ? 'group-link' : 'member-link');
+    })
+    .attr('d', d3.linkVertical().x(d => d.x + 60).y(d => d.y + 60));
+
+  // Nodes
+  const node = g.selectAll('.node')
+    .data(root.descendants())
+    .join('g')
+    .attr('class', d => 'node ' + d.data.type)
+    .attr('transform', d => `translate(${d.x + 60},${d.y + 60})`)
+    .style('cursor', 'pointer')
+    .on('mousemove', showTooltip)
+    .on('mouseleave', hideTooltip);
+
+  node.append('circle')
+    .attr('r', d => d.data.type === 'group' ? 18 : d.data.type === 'subgroup' ? 14 : 10);
+
+  node.append('text')
+    .attr('dy', d => d.data.type === 'group' ? 32 : 24)
+    .attr('text-anchor', 'middle')
+    .text(d => truncate(d.data.name, 18));
+
+  // Center view
+  svg.call(zoom.transform, d3.zoomIdentity.translate(0, 40));
+}
+
+function renderRadial(g, root, W, H, zoom, svg) {
+  const radius = Math.min(W, H) / 2 - 80;
+
+  const treeLayout = d3.tree()
+    .size([2 * Math.PI, radius])
+    .separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
+
+  treeLayout(root);
+
+  const cx = W / 2, cy = H / 2;
+
+  // Links
+  g.selectAll('.link')
+    .data(root.links())
+    .join('path')
+    .attr('class', d => {
+      const t = d.target.data.type;
+      return 'link ' + (t === 'guest' ? 'guest-link' : t === 'subgroup' ? 'group-link' : 'member-link');
+    })
+    .attr('d', d3.linkRadial().angle(d => d.x).radius(d => d.y))
+    .attr('transform', `translate(${cx},${cy})`);
+
+  // Nodes
+  const node = g.selectAll('.node')
+    .data(root.descendants())
+    .join('g')
+    .attr('class', d => 'node ' + d.data.type)
+    .attr('transform', d => {
+      const x = d.y * Math.cos(d.x - Math.PI / 2) + cx;
+      const y = d.y * Math.sin(d.x - Math.PI / 2) + cy;
+      return `translate(${x},${y})`;
+    })
+    .style('cursor', 'pointer')
+    .on('mousemove', showTooltip)
+    .on('mouseleave', hideTooltip);
+
+  node.append('circle')
+    .attr('r', d => d.data.type === 'group' ? 18 : d.data.type === 'subgroup' ? 12 : 8);
+
+  node.append('text')
+    .attr('dy', d => (d.data.type === 'group' ? 28 : 20))
+    .attr('text-anchor', 'middle')
+    .text(d => truncate(d.data.name, 14));
+}
+
+// ── Tooltip ────────────────────────────────────────────────────────────────
+function showTooltip(event, d) {
+  const tip = document.getElementById('tooltip');
+  document.getElementById('tip-name').textContent = d.data.name;
+  document.getElementById('tip-type').textContent = { group: 'Teams Group', subgroup: 'Nested Group', member: 'Member', guest: 'Guest User' }[d.data.type] || d.data.type;
+  document.getElementById('tip-upn').textContent  = d.data.upn || '—';
+  tip.classList.add('visible');
+  tip.style.left = (event.clientX + 14) + 'px';
+  tip.style.top  = (event.clientY - 10) + 'px';
+}
+function hideTooltip() {
+  document.getElementById('tooltip').classList.remove('visible');
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function show(id) {
+  ['state-empty','state-loading','state-select'].forEach(s => {
+    document.getElementById(s).classList.toggle('hidden', s !== id);
+  });
+}
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+function setLoading(msg) { document.getElementById('loading-detail').textContent = msg; }
+function clearSvg() { d3.select('#tree-svg').selectAll('*').remove(); }
+function truncate(s, n) { return s && s.length > n ? s.slice(0, n) + '…' : s; }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>

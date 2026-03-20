@@ -1,0 +1,12 @@
+{
+  "name": "teams-viz-api",
+  "version": "1.0.0",
+  "description": "Azure Function proxy for Microsoft Graph API",
+  "main": "graph-proxy/index.js",
+  "scripts": {
+    "start": "func start"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0"
+  }
+}
