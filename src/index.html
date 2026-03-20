@@ -399,7 +399,7 @@
   <div class="state-overlay hidden" id="state-select">
     <div class="state-icon">←</div>
     <div class="state-title">Select a group</div>
-    <div class="state-sub">Click a group in the sidebar to visualize its structure and members.</div>
+    <div class="state-sub">Click one or more groups in the sidebar. Members shared across groups are shown once with multiple links.</div>
   </div>
 
   <div class="legend" id="legend" style="display:none">
@@ -449,7 +449,7 @@
 // ── State ──────────────────────────────────────────────────────────────────
 let config = JSON.parse(sessionStorage.getItem('teamsmap_cfg') || 'null');
 let groups = [];
-let activeGroupId = null;
+let activeGroupIds = new Set();
 
 // ── Init ───────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
@@ -482,7 +482,7 @@ function saveConfig() {
 function disconnect() {
   config = null;
   groups = [];
-  activeGroupId = null;
+
   sessionStorage.removeItem('teamsmap_cfg');
   document.getElementById('status-pill').textContent = 'not connected';
   document.getElementById('status-pill').classList.remove('connected');
@@ -534,6 +534,9 @@ async function loadGroups() {
   }
 }
 
+// Cache for already-fetched group member data
+const groupCache = {};
+
 function renderSidebar() {
   const list = document.getElementById('group-list');
   list.innerHTML = '';
@@ -544,84 +547,70 @@ function renderSidebar() {
     el.innerHTML = `
       <div class="name">${esc(g.displayName)}</div>
       <div class="meta">${esc(g.mail || g.id.slice(0,8)+'…')}</div>`;
-    el.addEventListener('click', () => selectGroup(g));
+    el.addEventListener('click', () => toggleGroup(g));
     list.appendChild(el);
   });
 }
 
-// ── Select group & load members ────────────────────────────────────────────
-async function selectGroup(group) {
-  activeGroupId = group.id;
+// ── Toggle group selection (multi-select) ──────────────────────────────────
+async function toggleGroup(group) {
+  if (activeGroupIds.has(group.id)) {
+    activeGroupIds.delete(group.id);
+  } else {
+    activeGroupIds.add(group.id);
+  }
+
+  // Update sidebar active states
   document.querySelectorAll('.group-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.id === group.id);
+    el.classList.toggle('active', activeGroupIds.has(el.dataset.id));
   });
-  show('state-loading');
-  setLoading('Loading members for ' + group.displayName + '…');
-  clearSvg();
 
+  if (activeGroupIds.size === 0) {
+    show('state-select');
+    clearSvg();
+    document.getElementById('legend').style.display = 'none';
+    return;
+  }
+
+  // Fetch any groups not yet cached
+  const toFetch = [...activeGroupIds].filter(id => !groupCache[id]);
+  if (toFetch.length > 0) {
+    show('state-loading');
+    setLoading(`Loading ${toFetch.length} group(s)…`);
+    await Promise.all(toFetch.map(id => fetchGroupData(id)));
+  }
+
+  hide('state-loading');
+  document.getElementById('legend').style.display = 'flex';
+  renderMultiTree();
+}
+
+async function fetchGroupData(groupId) {
   try {
-    // Fetch members and owners in parallel
-    const [membersData, nestedData] = await Promise.all([
-      graphCall(`/groups/${group.id}/members?$select=id,displayName,userPrincipalName,userType,mail&$top=200`),
-      graphCall(`/groups/${group.id}/memberOf?$select=id,displayName,groupTypes&$top=50`).catch(() => ({ value: [] })),
+    const [membersData] = await Promise.all([
+      graphCall(`/groups/${groupId}/members?$select=id,displayName,userPrincipalName,userType,mail&$top=200`),
     ]);
-
     const members = membersData.value || [];
-    const parentGroups = (nestedData.value || []).filter(g =>
-      g['@odata.type'] === '#microsoft.graph.group' && g.id !== group.id
-    );
+    groupCache[groupId] = members;
 
-    // Build tree data
-    const treeData = buildTree(group, members, parentGroups);
-    hide('state-loading');
-    document.getElementById('legend').style.display = 'flex';
-    renderTree(treeData, group);
-
-    // Update sidebar badges
-    const guestCount   = members.filter(m => m.userType === 'Guest').length;
-    const memberCount  = members.length - guestCount;
-    const listItem = document.querySelector(`.group-item[data-id="${group.id}"] .meta`);
-    if (listItem) {
-      listItem.innerHTML = `${esc(group.mail || group.id.slice(0,8)+'…')}
+    // Update sidebar badge
+    const guestCount  = members.filter(m => m.userType === 'Guest').length;
+    const memberCount = members.length - guestCount;
+    const listItem = document.querySelector(`.group-item[data-id="${groupId}"] .meta`);
+    const g = groups.find(x => x.id === groupId);
+    if (listItem && g) {
+      listItem.innerHTML = `${esc(g.mail || g.id.slice(0,8)+'…')}
         <span class="badge members">${memberCount}m</span>
         ${guestCount ? `<span class="badge guests">${guestCount}g</span>` : ''}`;
     }
-  } catch (e) {
-    show('state-empty');
-    alert('Failed to load members: ' + e.message);
+  } catch(e) {
+    groupCache[groupId] = [];
+    console.error('Failed to fetch group', groupId, e);
   }
 }
 
-// ── Tree builder ───────────────────────────────────────────────────────────
-function buildTree(group, members, parentGroups) {
-  const root = {
-    id: group.id,
-    name: group.displayName,
-    type: 'group',
-    children: [],
-  };
-
-  // Add parent/nested group nodes
-  parentGroups.slice(0, 5).forEach(g => {
-    root.children.push({ id: g.id, name: g.displayName, type: 'subgroup', children: [] });
-  });
-
-  // Add members
-  members.forEach(m => {
-    root.children.push({
-      id: m.id,
-      name: m.displayName || m.mail || 'Unknown',
-      upn: m.userPrincipalName || '',
-      type: m.userType === 'Guest' ? 'guest' : 'member',
-      children: [],
-    });
-  });
-
-  return root;
-}
-
-// ── D3 Tree renderer ───────────────────────────────────────────────────────
-function renderTree(data, group) {
+// ── Multi-group force-directed renderer ────────────────────────────────────
+function renderMultiTree() {
   const svg = d3.select('#tree-svg');
   svg.selectAll('*').remove();
 
@@ -630,109 +619,108 @@ function renderTree(data, group) {
   const H = container.clientHeight;
 
   const g = svg.append('g');
-
-  // Zoom
-  const zoom = d3.zoom().scaleExtent([0.2, 3]).on('zoom', e => g.attr('transform', e.transform));
+  const zoom = d3.zoom().scaleExtent([0.1, 4]).on('zoom', e => g.attr('transform', e.transform));
   svg.call(zoom);
 
-  const root = d3.hierarchy(data);
-  const nodeCount = root.descendants().length;
+  // Build flat nodes + links arrays across all selected groups
+  const nodes = [];
+  const links = [];
+  const seenUsers = new Map(); // userId → node index (for shared member dedup)
 
-  // Use radial layout for large groups, tree for small
-  if (nodeCount > 30) {
-    renderRadial(g, root, W, H, zoom, svg);
-  } else {
-    renderVerticalTree(g, root, W, H, zoom, svg);
-  }
-}
+  [...activeGroupIds].forEach(groupId => {
+    const groupMeta = groups.find(x => x.id === groupId);
+    if (!groupMeta) return;
+    const members = groupCache[groupId] || [];
 
-function renderVerticalTree(g, root, W, H, zoom, svg) {
-  const treeLayout = d3.tree().size([W - 120, H - 120]);
-  treeLayout(root);
+    // Group hub node
+    const groupNode = {
+      id: groupId,
+      name: groupMeta.displayName,
+      type: 'group',
+      upn: '',
+    };
+    nodes.push(groupNode);
+    const groupIdx = nodes.length - 1;
 
-  // Links
-  g.selectAll('.link')
-    .data(root.links())
-    .join('path')
-    .attr('class', d => {
-      const t = d.target.data.type;
-      return 'link ' + (t === 'guest' ? 'guest-link' : t === 'subgroup' ? 'group-link' : 'member-link');
-    })
-    .attr('d', d3.linkVertical().x(d => d.x + 60).y(d => d.y + 60));
+    members.forEach(m => {
+      const type = m.userType === 'Guest' ? 'guest' : 'member';
+      let memberIdx;
 
-  // Nodes
-  const node = g.selectAll('.node')
-    .data(root.descendants())
-    .join('g')
-    .attr('class', d => 'node ' + d.data.type)
-    .attr('transform', d => `translate(${d.x + 60},${d.y + 60})`)
-    .style('cursor', 'pointer')
-    .on('mousemove', showTooltip)
-    .on('mouseleave', hideTooltip);
+      if (seenUsers.has(m.id)) {
+        // Member already exists (shared across groups) — just add a link
+        memberIdx = seenUsers.get(m.id);
+      } else {
+        nodes.push({
+          id: m.id,
+          name: m.displayName || m.mail || 'Unknown',
+          upn: m.userPrincipalName || '',
+          type,
+        });
+        memberIdx = nodes.length - 1;
+        seenUsers.set(m.id, memberIdx);
+      }
 
-  node.append('circle')
-    .attr('r', d => d.data.type === 'group' ? 18 : d.data.type === 'subgroup' ? 14 : 10);
+      links.push({ source: groupIdx, target: memberIdx, type });
+    });
+  });
 
-  node.append('text')
-    .attr('dy', d => d.data.type === 'group' ? 32 : 24)
-    .attr('text-anchor', 'middle')
-    .text(d => truncate(d.data.name, 18));
+  // Force simulation — shorter link distance keeps members close
+  const memberCount = nodes.filter(n => n.type !== 'group').length;
+  const linkDist = memberCount > 80 ? 55 : memberCount > 30 ? 70 : 90;
 
-  // Center view
-  svg.call(zoom.transform, d3.zoomIdentity.translate(0, 40));
-}
-
-function renderRadial(g, root, W, H, zoom, svg) {
-  const radius = Math.min(W, H) / 2 - 80;
-
-  const treeLayout = d3.tree()
-    .size([2 * Math.PI, radius])
-    .separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
-
-  treeLayout(root);
-
-  const cx = W / 2, cy = H / 2;
+  const simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id((d, i) => i).distance(linkDist).strength(0.8))
+    .force('charge', d3.forceManyBody().strength(memberCount > 60 ? -80 : -120))
+    .force('center', d3.forceCenter(W / 2, H / 2))
+    .force('collision', d3.forceCollide().radius(d => d.type === 'group' ? 24 : 14));
 
   // Links
-  g.selectAll('.link')
-    .data(root.links())
-    .join('path')
-    .attr('class', d => {
-      const t = d.target.data.type;
-      return 'link ' + (t === 'guest' ? 'guest-link' : t === 'subgroup' ? 'group-link' : 'member-link');
-    })
-    .attr('d', d3.linkRadial().angle(d => d.x).radius(d => d.y))
-    .attr('transform', `translate(${cx},${cy})`);
+  const link = g.append('g').selectAll('line')
+    .data(links)
+    .join('line')
+    .attr('class', d => 'link ' + (d.type === 'guest' ? 'guest-link' : 'member-link'))
+    .attr('stroke-width', 1);
 
   // Nodes
-  const node = g.selectAll('.node')
-    .data(root.descendants())
+  const node = g.append('g').selectAll('g')
+    .data(nodes)
     .join('g')
-    .attr('class', d => 'node ' + d.data.type)
-    .attr('transform', d => {
-      const x = d.y * Math.cos(d.x - Math.PI / 2) + cx;
-      const y = d.y * Math.sin(d.x - Math.PI / 2) + cy;
-      return `translate(${x},${y})`;
-    })
+    .attr('class', d => 'node ' + d.type)
     .style('cursor', 'pointer')
     .on('mousemove', showTooltip)
-    .on('mouseleave', hideTooltip);
+    .on('mouseleave', hideTooltip)
+    .call(d3.drag()
+      .on('start', (event, d) => { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on('drag',  (event, d) => { d.fx = event.x; d.fy = event.y; })
+      .on('end',   (event, d) => { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+    );
 
   node.append('circle')
-    .attr('r', d => d.data.type === 'group' ? 18 : d.data.type === 'subgroup' ? 12 : 8);
+    .attr('r', d => d.type === 'group' ? 18 : 9);
 
   node.append('text')
-    .attr('dy', d => (d.data.type === 'group' ? 28 : 20))
+    .attr('dy', d => d.type === 'group' ? 30 : 20)
     .attr('text-anchor', 'middle')
-    .text(d => truncate(d.data.name, 14));
+    .style('font-size', d => d.type === 'group' ? '12px' : '10px')
+    .text(d => truncate(d.data ? d.data.name : d.name, d.type === 'group' ? 20 : 14));
+
+  simulation.on('tick', () => {
+    link
+      .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+    node.attr('transform', d => `translate(${d.x},${d.y})`);
+  });
 }
 
 // ── Tooltip ────────────────────────────────────────────────────────────────
 function showTooltip(event, d) {
   const tip = document.getElementById('tooltip');
-  document.getElementById('tip-name').textContent = d.data.name;
-  document.getElementById('tip-type').textContent = { group: 'Teams Group', subgroup: 'Nested Group', member: 'Member', guest: 'Guest User' }[d.data.type] || d.data.type;
-  document.getElementById('tip-upn').textContent  = d.data.upn || '—';
+  const name = d.name || (d.data && d.data.name) || '';
+  const type = d.type || (d.data && d.data.type) || '';
+  const upn  = d.upn  || (d.data && d.data.upn)  || '';
+  document.getElementById('tip-name').textContent = name;
+  document.getElementById('tip-type').textContent = { group: 'Teams Group', subgroup: 'Nested Group', member: 'Member', guest: 'Guest User' }[type] || type;
+  document.getElementById('tip-upn').textContent  = upn || '—';
   tip.classList.add('visible');
   tip.style.left = (event.clientX + 14) + 'px';
   tip.style.top  = (event.clientY - 10) + 'px';
