@@ -10,6 +10,11 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
     :root {
       --bg:       #0d0f14;
       --surface:  #13161e;
@@ -29,7 +34,7 @@
       color: var(--text);
       font-family: var(--font-ui);
       font-size: 14px;
-      min-height: 100vh;
+
       display: grid;
       grid-template-rows: 56px 1fr;
       grid-template-columns: 300px 1fr;
@@ -520,11 +525,22 @@ async function loadGroups() {
   show('state-loading');
   setLoading('Fetching Teams-enabled groups…');
   try {
-    // Filter to M365 groups with Teams provisioned
-    const data = await graphCall(
-      "/groups?$filter=resourceProvisioningOptions/Any(x:x eq 'Team')&$select=id,displayName,description,mail,membershipRule&$top=100"
-    );
-    groups = data.value || [];
+    groups = [];
+    let path = "/groups?$filter=resourceProvisioningOptions/Any(x:x eq 'Team')&$select=id,displayName,description,mail,membershipRule&$top=999";
+
+    while (path) {
+      const data = await graphCall(path);
+      groups = groups.concat(data.value || []);
+      setLoading(`Fetching Teams-enabled groups… (${groups.length} so far)`);
+
+      // Follow nextLink if present, stripping the base Graph URL
+      if (data['@odata.nextLink']) {
+        path = data['@odata.nextLink'].replace('https://graph.microsoft.com/v1.0', '');
+      } else {
+        path = null;
+      }
+    }
+
     renderSidebar();
     show('state-select');
     document.getElementById('group-count').textContent = groups.length;
