@@ -10,23 +10,20 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html, body {
-      height: 100%;
-      overflow: hidden;
-    }
+    html, body { height: 100%; overflow: hidden; }
 
     :root {
-      --bg:       #0d0f14;
-      --surface:  #13161e;
-      --border:   #1f2433;
-      --accent:   #4f7cff;
-      --accent2:  #7c4fff;
-      --text:     #e2e6f0;
-      --muted:    #5a6380;
-      --guest:    #ff6b4f;
-      --member:   #4fffb0;
-      --font-ui:  'Sora', sans-serif;
-      --font-mono:'DM Mono', monospace;
+      --bg:        #0d0f14;
+      --surface:   #13161e;
+      --border:    #1f2433;
+      --accent:    #4f7cff;
+      --accent2:   #7c4fff;
+      --text:      #e2e6f0;
+      --muted:     #5a6380;
+      --guest:     #ff6b4f;
+      --member:    #4fffb0;
+      --font-ui:   'Sora', sans-serif;
+      --font-mono: 'DM Mono', monospace;
     }
 
     body {
@@ -34,13 +31,11 @@
       color: var(--text);
       font-family: var(--font-ui);
       font-size: 14px;
-
+      height: 100vh;
       display: grid;
       grid-template-rows: 56px 1fr;
       grid-template-columns: 300px 1fr;
-      grid-template-areas:
-        "header header"
-        "sidebar main";
+      grid-template-areas: "header header" "sidebar main";
     }
 
     /* ── Header ── */
@@ -53,12 +48,7 @@
       gap: 16px;
       background: var(--surface);
     }
-    header .logo {
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: -0.3px;
-      color: var(--text);
-    }
+    header .logo { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
     header .logo span { color: var(--accent); }
     header .pill {
       font-family: var(--font-mono);
@@ -86,6 +76,7 @@
     header button:hover { background: rgba(79,124,255,.12); }
     header button.danger { border-color: var(--guest); color: var(--guest); }
     header button.danger:hover { background: rgba(255,107,79,.1); }
+    .hidden { display: none !important; }
 
     /* ── Sidebar ── */
     aside {
@@ -96,244 +87,252 @@
       flex-direction: column;
       overflow: hidden;
     }
+
+    /* Tab bar */
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .tab-bar button {
+      flex: 1;
+      padding: 12px 0;
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .tab-bar button.active { color: var(--text); border-bottom-color: var(--accent); }
+    .tab-bar button:hover:not(.active) { color: var(--text); }
+
+    .tab-panel { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+    .tab-panel.hidden { display: none !important; }
+
     .sidebar-header {
-      padding: 16px;
+      padding: 12px 16px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-shrink: 0;
     }
     .sidebar-header span {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: .08em;
-      text-transform: uppercase;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: .08em; text-transform: uppercase;
       color: var(--muted);
     }
     .sidebar-header .count {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      background: #1a1f2e;
-      border: 1px solid var(--border);
-      padding: 2px 8px;
-      border-radius: 10px;
-      color: var(--text);
+      font-family: var(--font-mono); font-size: 11px;
+      background: #1a1f2e; border: 1px solid var(--border);
+      padding: 2px 8px; border-radius: 10px; color: var(--text);
     }
-    .group-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px;
+    .sidebar-header .icon-btn {
+      width: 26px; height: 26px;
+      border-radius: 6px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted);
+      font-size: 18px; line-height: 1;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .12s, color .12s;
     }
+    .sidebar-header .icon-btn:hover { background: #1a1f2e; color: var(--text); }
+
+    .group-list { flex: 1; overflow-y: auto; padding: 8px; }
     .group-list::-webkit-scrollbar { width: 4px; }
     .group-list::-webkit-scrollbar-track { background: transparent; }
     .group-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
     .group-item {
-      padding: 10px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background .12s;
-      border: 1px solid transparent;
-      margin-bottom: 2px;
+      padding: 10px 12px; border-radius: 8px;
+      cursor: pointer; transition: background .12s;
+      border: 1px solid transparent; margin-bottom: 2px;
     }
     .group-item:hover { background: #1a1f2e; }
-    .group-item.active {
-      background: rgba(79,124,255,.1);
-      border-color: rgba(79,124,255,.3);
-    }
-    .group-item .name {
-      font-size: 13px;
-      font-weight: 400;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: var(--text);
-    }
-    .group-item .meta {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 3px;
-    }
-    .group-item .meta .badge {
-      display: inline-block;
-      padding: 1px 6px;
-      border-radius: 4px;
-      font-size: 10px;
-      margin-left: 4px;
-    }
+    .group-item.active { background: rgba(79,124,255,.1); border-color: rgba(79,124,255,.3); }
+    .group-item .name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .group-item .meta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+    .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; margin-left: 4px; }
     .badge.members { background: rgba(79,255,176,.1); color: var(--member); }
-    .badge.guests   { background: rgba(255,107,79,.1);  color: var(--guest); }
+    .badge.guests   { background: rgba(255,107,79,.1); color: var(--guest); }
+    .badge.dept     { background: rgba(79,124,255,.12); color: #8aa4ff; font-family: var(--font-mono); }
+
+    /* ── Departments panel ── */
+    .dept-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .dept-list::-webkit-scrollbar { width: 4px; }
+    .dept-list::-webkit-scrollbar-track { background: transparent; }
+    .dept-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .dept-item { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+    .dept-item-header {
+      display: flex; align-items: center;
+      padding: 10px 12px; cursor: pointer; gap: 8px;
+      transition: background .12s;
+    }
+    .dept-item-header:hover { background: #1a1f2e; }
+    .dept-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dept-item-header .dept-name {
+      flex: 1; font-size: 13px; font-weight: 600;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .dept-item-header .dept-count { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+    .dept-item-header .dept-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .12s; }
+    .dept-item-header:hover .dept-actions { opacity: 1; }
+    .dept-actions button {
+      font-size: 12px; background: transparent; border: none;
+      color: var(--muted); cursor: pointer; padding: 2px 4px;
+      border-radius: 4px; line-height: 1;
+    }
+    .dept-actions button:hover { color: var(--text); background: rgba(255,255,255,.06); }
+    .dept-actions button.del:hover { color: var(--guest); }
+
+    .dept-groups { border-top: 1px solid var(--border); padding: 6px 8px; display: none; }
+    .dept-groups.open { display: block; }
+
+    .dept-group-chip {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 5px 8px; border-radius: 6px; font-size: 12px; margin-bottom: 2px;
+    }
+    .dept-group-chip:hover { background: #1a1f2e; }
+    .dept-group-chip .remove-group {
+      font-size: 14px; color: var(--muted); cursor: pointer;
+      line-height: 1; padding: 0 2px; border-radius: 3px;
+      border: none; background: transparent; opacity: 0; transition: opacity .1s, color .1s;
+    }
+    .dept-group-chip:hover .remove-group { opacity: 1; }
+    .dept-group-chip .remove-group:hover { color: var(--guest); }
+
+    .dept-add-group { margin-top: 6px; position: relative; }
+    .dept-add-group input {
+      width: 100%; background: #0d0f14; border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px 10px; font-family: var(--font-ui);
+      font-size: 12px; color: var(--text); outline: none; transition: border-color .15s;
+    }
+    .dept-add-group input:focus { border-color: var(--accent); }
+    .dept-add-group input::placeholder { color: var(--muted); }
+
+    .dept-search-results {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; max-height: 180px; overflow-y: auto;
+      z-index: 20; display: none;
+    }
+    .dept-search-results.open { display: block; }
+    .dept-search-result {
+      padding: 8px 12px; font-size: 12px; cursor: pointer;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .dept-search-result:hover { background: #1a1f2e; }
+
+    .dept-empty { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+
+    .dept-visualize-btn {
+      margin: 8px; padding: 8px; border-radius: 8px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted); font-family: var(--font-ui); font-size: 12px; font-weight: 600;
+      cursor: pointer; width: calc(100% - 16px); transition: all .15s; flex-shrink: 0;
+    }
+    .dept-visualize-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: rgba(79,124,255,.07); }
+    .dept-visualize-btn:disabled { opacity: .4; cursor: default; }
+
+    .new-dept-form {
+      padding: 10px 12px; border-top: 1px solid var(--border);
+      display: none; gap: 8px; flex-shrink: 0;
+    }
+    .new-dept-form.open { display: flex; }
+    .new-dept-form input {
+      flex: 1; background: #0d0f14; border: 1px solid var(--border);
+      border-radius: 6px; padding: 7px 10px; font-family: var(--font-ui);
+      font-size: 12px; color: var(--text); outline: none;
+    }
+    .new-dept-form input:focus { border-color: var(--accent); }
+    .new-dept-form button {
+      padding: 7px 14px; border-radius: 6px; font-family: var(--font-ui);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      border: 1px solid var(--accent); background: var(--accent); color: #fff;
+    }
+    .new-dept-form button:hover { background: #3d6aff; }
 
     /* ── Main ── */
-    main {
-      grid-area: main;
-      position: relative;
-      overflow: hidden;
-      background: var(--bg);
-    }
-
-    /* Empty / loading states */
+    main { grid-area: main; position: relative; overflow: hidden; background: var(--bg); }
     .state-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      pointer-events: none;
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 12px; pointer-events: none;
     }
-    .state-overlay.hidden { display: none; }
+    .state-overlay.hidden { display: none !important; }
     .state-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      background: #13161e;
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
+      width: 48px; height: 48px; border-radius: 12px;
+      background: #13161e; border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
     }
-    .state-title { font-size: 15px; font-weight: 600; color: var(--text); }
+    .state-title { font-size: 15px; font-weight: 600; }
     .state-sub   { font-size: 13px; color: var(--muted); text-align: center; max-width: 300px; }
-
-    /* Spinner */
     .spinner {
-      width: 32px; height: 32px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
+      width: 32px; height: 32px; border: 2px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
       animation: spin .7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── SVG Tree ── */
-    #tree-svg {
-      width: 100%; height: 100%;
-      display: block;
-    }
-    .node circle {
-      stroke-width: 1.5;
-      transition: r .2s;
-    }
-    .node.group circle   { fill: #1a1f2e; stroke: var(--accent); }
-    .node.member circle  { fill: #0f1a14; stroke: var(--member); }
-    .node.guest circle   { fill: #1a100e; stroke: var(--guest); }
-    .node.subgroup circle { fill: #1a1730; stroke: var(--accent2); }
-    .node text {
-      font-family: var(--font-ui);
-      font-size: 12px;
-      fill: var(--text);
-      pointer-events: none;
-    }
-    .node text.label-sub {
-      font-size: 10px;
-      fill: var(--muted);
-    }
-    .link {
-      fill: none;
-      stroke: var(--border);
-      stroke-width: 1;
-    }
+    #tree-svg { width: 100%; height: 100%; display: block; }
+    .node circle { stroke-width: 1.5; }
+    .node.group  circle { fill: #1a1f2e; stroke: var(--accent); }
+    .node.member circle { fill: #0f1a14; stroke: var(--member); }
+    .node.guest  circle { fill: #1a100e; stroke: var(--guest); }
+    .node.dept   circle { stroke-width: 2; }
+    .node text { font-family: var(--font-ui); font-size: 12px; fill: var(--text); pointer-events: none; }
+    .link { fill: none; stroke: var(--border); stroke-width: 1; }
     .link.member-link { stroke: rgba(79,255,176,.2); }
     .link.guest-link  { stroke: rgba(255,107,79,.2); }
-    .link.group-link  { stroke: rgba(79,124,255,.25); }
+    .link.dept-link   { stroke: rgba(79,124,255,.25); stroke-dasharray: 4 3; }
 
-    /* ── Config modal ── */
+    /* ── Modal ── */
     .modal-backdrop {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,.7);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 100;
+      position: fixed; inset: 0; background: rgba(0,0,0,.7);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
     }
-    .modal-backdrop.hidden { display: none; }
+    .modal-backdrop.hidden { display: none !important; }
     .modal {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 28px;
-      width: 440px;
-      max-width: 95vw;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 28px; width: 440px; max-width: 95vw;
     }
-    .modal h2 {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
-    .modal p {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 22px;
-      line-height: 1.6;
-    }
+    .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .modal p  { font-size: 13px; color: var(--muted); margin-bottom: 22px; line-height: 1.6; }
     .modal label {
-      display: block;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 6px;
+      display: block; font-size: 11px; font-weight: 600;
+      letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
     }
     .modal input {
-      width: 100%;
-      background: #0d0f14;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 9px 12px;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--text);
-      margin-bottom: 14px;
-      outline: none;
-      transition: border-color .15s;
+      width: 100%; background: #0d0f14; border: 1px solid var(--border);
+      border-radius: 8px; padding: 9px 12px; font-family: var(--font-mono);
+      font-size: 12px; color: var(--text); margin-bottom: 14px; outline: none; transition: border-color .15s;
     }
     .modal input:focus { border-color: var(--accent); }
     .modal .note {
-      background: rgba(79,124,255,.07);
-      border: 1px solid rgba(79,124,255,.2);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 12px;
-      color: #8aa4ff;
-      margin-bottom: 20px;
-      line-height: 1.6;
+      background: rgba(79,124,255,.07); border: 1px solid rgba(79,124,255,.2);
+      border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #8aa4ff;
+      margin-bottom: 20px; line-height: 1.6;
     }
     .modal .actions { display: flex; gap: 8px; justify-content: flex-end; }
     .modal .actions button {
-      font-family: var(--font-ui);
-      font-size: 13px;
-      font-weight: 600;
-      padding: 8px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--muted);
-      transition: all .15s;
+      font-family: var(--font-ui); font-size: 13px; font-weight: 600;
+      padding: 8px 20px; border-radius: 8px; cursor: pointer;
+      border: 1px solid var(--border); background: transparent; color: var(--muted); transition: all .15s;
     }
-    .modal .actions button.primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-    }
+    .modal .actions button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
     .modal .actions button.primary:hover { background: #3d6aff; }
 
     /* ── Tooltip ── */
     #tooltip {
-      position: fixed;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 12px;
-      pointer-events: none;
-      z-index: 50;
-      opacity: 0;
-      transition: opacity .15s;
-      max-width: 220px;
+      position: fixed; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 14px; font-size: 12px;
+      pointer-events: none; z-index: 50; opacity: 0; transition: opacity .15s; max-width: 220px;
     }
     #tooltip.visible { opacity: 1; }
     #tooltip .tip-name  { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
@@ -344,30 +343,17 @@
 
     /* ── Legend ── */
     .legend {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 16px;
-      font-size: 11px;
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
+      position: absolute; bottom: 20px; left: 20px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px; font-size: 11px;
+      display: flex; flex-direction: column; gap: 7px;
     }
     .legend-row { display: flex; align-items: center; gap: 8px; color: var(--muted); }
-    .legend-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      border: 1.5px solid;
-      flex-shrink: 0;
-    }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid; flex-shrink: 0; }
   </style>
 </head>
 <body>
 
-<!-- Header -->
 <header>
   <div class="logo">Teams<span>Map</span></div>
   <div class="pill" id="status-pill">not connected</div>
@@ -376,16 +362,40 @@
   <button id="btn-disconnect" class="danger hidden" onclick="disconnect()">Disconnect</button>
 </header>
 
-<!-- Sidebar -->
 <aside>
-  <div class="sidebar-header">
-    <span>Teams Groups</span>
-    <span class="count" id="group-count">0</span>
+  <div class="tab-bar">
+    <button class="active" onclick="switchTab('groups')"      id="tab-groups">Groups</button>
+    <button              onclick="switchTab('departments')" id="tab-departments">Departments</button>
   </div>
-  <div class="group-list" id="group-list"></div>
+
+  <!-- Groups tab -->
+  <div class="tab-panel" id="panel-groups">
+    <div class="sidebar-header">
+      <span>Teams Groups</span>
+      <span class="count" id="group-count">0</span>
+    </div>
+    <div class="group-list" id="group-list"></div>
+  </div>
+
+  <!-- Departments tab -->
+  <div class="tab-panel hidden" id="panel-departments">
+    <div class="sidebar-header">
+      <span>Departments</span>
+      <button class="icon-btn" onclick="toggleNewDeptForm()" title="Add department">+</button>
+    </div>
+    <div class="dept-list" id="dept-list">
+      <div class="dept-empty" id="dept-empty">No departments yet.<br>Click + to create one.</div>
+    </div>
+    <div class="new-dept-form" id="new-dept-form">
+      <input type="text" id="new-dept-input" placeholder="Department name…" onkeydown="newDeptKey(event)" />
+      <button onclick="createDepartment()">Add</button>
+    </div>
+    <button class="dept-visualize-btn" id="dept-visualize-btn" onclick="visualizeDepartments()" disabled>
+      Visualize selected departments
+    </button>
+  </div>
 </aside>
 
-<!-- Main canvas -->
 <main>
   <svg id="tree-svg"></svg>
 
@@ -397,7 +407,7 @@
 
   <div class="state-overlay hidden" id="state-loading">
     <div class="spinner"></div>
-    <div class="state-title">Loading groups…</div>
+    <div class="state-title">Loading…</div>
     <div class="state-sub" id="loading-detail">Fetching Teams groups</div>
   </div>
 
@@ -408,31 +418,25 @@
   </div>
 
   <div class="legend" id="legend" style="display:none">
-    <div class="legend-row"><div class="legend-dot" style="border-color:#4f7cff;background:#1a1f2e"></div> Team / subgroup</div>
+    <div class="legend-row"><div class="legend-dot" style="border-color:#4f7cff;background:#1a1f2e"></div> Team / group</div>
     <div class="legend-row"><div class="legend-dot" style="border-color:#4fffb0;background:#0f1a14"></div> Member</div>
     <div class="legend-row"><div class="legend-dot" style="border-color:#ff6b4f;background:#1a100e"></div> Guest</div>
   </div>
 </main>
 
-<!-- Config modal -->
 <div class="modal-backdrop" id="modal">
   <div class="modal">
     <h2>Connect to Microsoft Graph</h2>
     <p>Enter your app registration credentials. These are stored only in your browser's session — never sent anywhere except your own API proxy.</p>
-
     <div class="note">
       ⚠ This app expects a backend proxy at <code>/api/graph-proxy</code> that holds your client secret and forwards Graph API calls. See <code>README.md</code> for the Azure Function setup.
     </div>
-
     <label>Tenant ID</label>
     <input type="text" id="cfg-tenant" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
-
     <label>Client ID</label>
     <input type="text" id="cfg-client" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
-
     <label>API proxy base URL (optional override)</label>
     <input type="text" id="cfg-proxy" placeholder="/api/graph-proxy" value="/api/graph-proxy" />
-
     <div class="actions">
       <button onclick="closeConfig()">Cancel</button>
       <button class="primary" onclick="saveConfig()">Connect & Load</button>
@@ -440,7 +444,6 @@
   </div>
 </div>
 
-<!-- Tooltip -->
 <div id="tooltip">
   <div class="tip-name" id="tip-name"></div>
   <div class="tip-type" id="tip-type"></div>
@@ -452,14 +455,28 @@
 
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
-let config = JSON.parse(sessionStorage.getItem('teamsmap_cfg') || 'null');
-let groups = [];
+let config         = JSON.parse(sessionStorage.getItem('teamsmap_cfg') || 'null');
+let groups         = [];
 let activeGroupIds = new Set();
+let activeDeptIds  = new Set();
+const groupCache   = {};
+
+const DEPT_COLORS  = ['#4f7cff','#4fffb0','#ff6b4f','#7c4fff','#ffcc4f','#4fcfff','#ff4fa0','#a0ff4f'];
+let departments    = JSON.parse(localStorage.getItem('teamsmap_depts') || '[]');
 
 // ── Init ───────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+  renderDeptList();
   if (config) { updateStatusConnected(); loadGroups(); }
 });
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('panel-groups').classList.toggle('hidden', tab !== 'groups');
+  document.getElementById('panel-departments').classList.toggle('hidden', tab !== 'departments');
+  document.getElementById('tab-groups').classList.toggle('active', tab === 'groups');
+  document.getElementById('tab-departments').classList.toggle('active', tab === 'departments');
+}
 
 // ── Config modal ───────────────────────────────────────────────────────────
 function openConfig() {
@@ -470,9 +487,7 @@ function openConfig() {
   }
   document.getElementById('modal').classList.remove('hidden');
 }
-function closeConfig() {
-  document.getElementById('modal').classList.add('hidden');
-}
+function closeConfig() { document.getElementById('modal').classList.add('hidden'); }
 function saveConfig() {
   config = {
     tenantId: document.getElementById('cfg-tenant').value.trim(),
@@ -485,9 +500,8 @@ function saveConfig() {
   loadGroups();
 }
 function disconnect() {
-  config = null;
-  groups = [];
-
+  config = null; groups = [];
+  activeGroupIds.clear(); activeDeptIds.clear();
   sessionStorage.removeItem('teamsmap_cfg');
   document.getElementById('status-pill').textContent = 'not connected';
   document.getElementById('status-pill').classList.remove('connected');
@@ -496,8 +510,7 @@ function disconnect() {
   document.getElementById('group-list').innerHTML = '';
   document.getElementById('group-count').textContent = '0';
   document.getElementById('legend').style.display = 'none';
-  show('state-empty');
-  clearSvg();
+  show('state-empty'); clearSvg();
 }
 function updateStatusConnected() {
   document.getElementById('status-pill').textContent = 'connected · ' + (config.tenantId || '').slice(0,8) + '…';
@@ -506,10 +519,7 @@ function updateStatusConnected() {
   document.getElementById('btn-disconnect').classList.remove('hidden');
 }
 
-// ── API helpers ────────────────────────────────────────────────────────────
-// Calls go to your Azure Function proxy which holds the client_secret.
-// Proxy should accept: POST /api/graph-proxy  { path: "/groups?$filter=..." }
-// and return the Graph API JSON response.
+// ── API ────────────────────────────────────────────────────────────────────
 async function graphCall(path) {
   const res = await fetch(config.proxy, {
     method: 'POST',
@@ -526,33 +536,26 @@ async function loadGroups() {
   setLoading('Fetching Teams-enabled groups…');
   try {
     groups = [];
-    let path = "/groups?$filter=resourceProvisioningOptions/Any(x:x eq 'Team')&$select=id,displayName,description,mail,membershipRule&$top=999";
-
+    let path = "/groups?$filter=resourceProvisioningOptions/Any(x:x eq 'Team')&$select=id,displayName,description,mail&$top=999";
     while (path) {
       const data = await graphCall(path);
       groups = groups.concat(data.value || []);
       setLoading(`Fetching Teams-enabled groups… (${groups.length} so far)`);
-
-      // Follow nextLink if present, stripping the base Graph URL
-      if (data['@odata.nextLink']) {
-        path = data['@odata.nextLink'].replace('https://graph.microsoft.com/v1.0', '');
-      } else {
-        path = null;
-      }
+      path = data['@odata.nextLink']
+        ? data['@odata.nextLink'].replace('https://graph.microsoft.com/v1.0', '')
+        : null;
     }
-
     renderSidebar();
+    renderDeptList();
     show('state-select');
     document.getElementById('group-count').textContent = groups.length;
   } catch (e) {
     show('state-empty');
-    alert('Failed to load groups: ' + e.message + '\n\nMake sure your API proxy is running and has the required Graph permissions (Group.Read.All, GroupMember.Read.All).');
+    alert('Failed to load groups: ' + e.message);
   }
 }
 
-// Cache for already-fetched group member data
-const groupCache = {};
-
+// ── Groups sidebar ─────────────────────────────────────────────────────────
 function renderSidebar() {
   const list = document.getElementById('group-list');
   list.innerHTML = '';
@@ -560,190 +563,315 @@ function renderSidebar() {
     const el = document.createElement('div');
     el.className = 'group-item';
     el.dataset.id = g.id;
+    const dept = departments.find(d => d.groupIds.includes(g.id));
+    const deptBadge = dept ? `<span class="badge dept">${esc(dept.name)}</span>` : '';
     el.innerHTML = `
       <div class="name">${esc(g.displayName)}</div>
-      <div class="meta">${esc(g.mail || g.id.slice(0,8)+'…')}</div>`;
+      <div class="meta">${esc(g.mail || g.id.slice(0,8)+'…')}${deptBadge}</div>`;
     el.addEventListener('click', () => toggleGroup(g));
     list.appendChild(el);
   });
 }
 
-// ── Toggle group selection (multi-select) ──────────────────────────────────
 async function toggleGroup(group) {
   if (activeGroupIds.has(group.id)) {
     activeGroupIds.delete(group.id);
   } else {
     activeGroupIds.add(group.id);
   }
-
-  // Update sidebar active states
   document.querySelectorAll('.group-item').forEach(el => {
     el.classList.toggle('active', activeGroupIds.has(el.dataset.id));
   });
-
   if (activeGroupIds.size === 0) {
-    show('state-select');
-    clearSvg();
+    show('state-select'); clearSvg();
     document.getElementById('legend').style.display = 'none';
     return;
   }
-
-  // Fetch any groups not yet cached
   const toFetch = [...activeGroupIds].filter(id => !groupCache[id]);
   if (toFetch.length > 0) {
     show('state-loading');
     setLoading(`Loading ${toFetch.length} group(s)…`);
     await Promise.all(toFetch.map(id => fetchGroupData(id)));
   }
-
   hide('state-loading');
   document.getElementById('legend').style.display = 'flex';
-  renderMultiTree();
+  renderForceGraph([...activeGroupIds], null);
 }
 
 async function fetchGroupData(groupId) {
   try {
-    const [membersData] = await Promise.all([
-      graphCall(`/groups/${groupId}/members?$select=id,displayName,userPrincipalName,userType,mail&$top=200`),
-    ]);
-    const members = membersData.value || [];
+    const data = await graphCall(`/groups/${groupId}/members?$select=id,displayName,userPrincipalName,userType,mail&$top=200`);
+    const members = data.value || [];
     groupCache[groupId] = members;
-
-    // Update sidebar badge
     const guestCount  = members.filter(m => m.userType === 'Guest').length;
     const memberCount = members.length - guestCount;
     const listItem = document.querySelector(`.group-item[data-id="${groupId}"] .meta`);
     const g = groups.find(x => x.id === groupId);
     if (listItem && g) {
+      const dept = departments.find(d => d.groupIds.includes(groupId));
+      const deptBadge = dept ? `<span class="badge dept">${esc(dept.name)}</span>` : '';
       listItem.innerHTML = `${esc(g.mail || g.id.slice(0,8)+'…')}
         <span class="badge members">${memberCount}m</span>
-        ${guestCount ? `<span class="badge guests">${guestCount}g</span>` : ''}`;
+        ${guestCount ? `<span class="badge guests">${guestCount}g</span>` : ''}${deptBadge}`;
     }
-  } catch(e) {
-    groupCache[groupId] = [];
-    console.error('Failed to fetch group', groupId, e);
-  }
+  } catch(e) { groupCache[groupId] = []; }
 }
 
-// ── Multi-group force-directed renderer ────────────────────────────────────
-function renderMultiTree() {
+// ── Departments CRUD ───────────────────────────────────────────────────────
+function saveDepts() { localStorage.setItem('teamsmap_depts', JSON.stringify(departments)); }
+
+function toggleNewDeptForm() {
+  const form = document.getElementById('new-dept-form');
+  if (form.classList.toggle('open')) document.getElementById('new-dept-input').focus();
+}
+function newDeptKey(e) {
+  if (e.key === 'Enter') createDepartment();
+  if (e.key === 'Escape') document.getElementById('new-dept-form').classList.remove('open');
+}
+function createDepartment() {
+  const input = document.getElementById('new-dept-input');
+  const name  = input.value.trim();
+  if (!name) return;
+  departments.push({
+    id: 'dept_' + Date.now(), name,
+    color: DEPT_COLORS[departments.length % DEPT_COLORS.length],
+    groupIds: [], collapsed: false,
+  });
+  saveDepts(); input.value = '';
+  document.getElementById('new-dept-form').classList.remove('open');
+  renderDeptList(); renderSidebar();
+}
+function deleteDepartment(id) {
+  if (!confirm('Delete this department? Groups will not be affected.')) return;
+  departments = departments.filter(d => d.id !== id);
+  activeDeptIds.delete(id);
+  saveDepts(); renderDeptList(); renderSidebar(); updateDeptVisualizeBtn();
+}
+function renameDepartment(id) {
+  const dept = departments.find(d => d.id === id);
+  if (!dept) return;
+  const name = prompt('Rename department:', dept.name);
+  if (name && name.trim()) { dept.name = name.trim(); saveDepts(); renderDeptList(); renderSidebar(); }
+}
+function removeGroupFromDept(deptId, groupId) {
+  const dept = departments.find(d => d.id === deptId);
+  if (dept) { dept.groupIds = dept.groupIds.filter(id => id !== groupId); saveDepts(); renderDeptList(); renderSidebar(); }
+}
+function toggleDeptCollapse(id) {
+  const dept = departments.find(d => d.id === id);
+  if (dept) { dept.collapsed = !dept.collapsed; renderDeptList(); }
+}
+function toggleDeptSelect(id) {
+  if (activeDeptIds.has(id)) { activeDeptIds.delete(id); } else { activeDeptIds.add(id); }
+  updateDeptVisualizeBtn(); renderDeptList();
+}
+function updateDeptVisualizeBtn() {
+  document.getElementById('dept-visualize-btn').disabled = activeDeptIds.size === 0;
+}
+
+function renderDeptList() {
+  const list  = document.getElementById('dept-list');
+  const empty = document.getElementById('dept-empty');
+  if (departments.length === 0) {
+    list.innerHTML = ''; list.appendChild(empty); empty.style.display = 'block'; return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = '';
+  departments.forEach(dept => {
+    const isSelected     = activeDeptIds.has(dept.id);
+    const assignedGroups = dept.groupIds.map(id => groups.find(g => g.id === id)).filter(Boolean);
+    const item           = document.createElement('div');
+    item.className       = 'dept-item';
+    if (isSelected) item.style.borderColor = dept.color + '66';
+    item.innerHTML = `
+      <div class="dept-item-header" onclick="toggleDeptCollapse('${dept.id}')">
+        <div class="dept-color-dot" style="background:${dept.color}"></div>
+        <div class="dept-name">${esc(dept.name)}</div>
+        <span class="dept-count">${assignedGroups.length} groups</span>
+        <div class="dept-actions" onclick="event.stopPropagation()">
+          <button onclick="toggleDeptSelect('${dept.id}')" title="${isSelected ? 'Deselect' : 'Select'}"
+            style="${isSelected ? 'color:'+dept.color : ''}">${isSelected ? '●' : '○'}</button>
+          <button onclick="renameDepartment('${dept.id}')" title="Rename">✎</button>
+          <button class="del" onclick="deleteDepartment('${dept.id}')" title="Delete">✕</button>
+        </div>
+      </div>
+      <div class="dept-groups ${dept.collapsed ? '' : 'open'}">
+        ${assignedGroups.map(g => `
+          <div class="dept-group-chip">
+            <span>${esc(g.displayName)}</span>
+            <button class="remove-group" onclick="removeGroupFromDept('${dept.id}','${g.id}')">✕</button>
+          </div>`).join('')}
+        <div class="dept-add-group">
+          <input type="text" placeholder="Add group…"
+            oninput="deptGroupSearch(this,'${dept.id}')"
+            onfocus="deptGroupSearch(this,'${dept.id}')"
+            onblur="setTimeout(()=>closeDeptSearch('${dept.id}'),200)" />
+          <div class="dept-search-results" id="dsr-${dept.id}"></div>
+        </div>
+      </div>`;
+    list.appendChild(item);
+  });
+}
+
+// ── Department group search ────────────────────────────────────────────────
+function deptGroupSearch(input, deptId) {
+  const dept    = departments.find(d => d.id === deptId);
+  const query   = input.value.toLowerCase();
+  const results = document.getElementById('dsr-' + deptId);
+  const matches = groups
+    .filter(g => !dept.groupIds.includes(g.id))
+    .filter(g => !query || g.displayName.toLowerCase().includes(query))
+    .slice(0, 20);
+  if (matches.length === 0) { results.classList.remove('open'); return; }
+  results.innerHTML = matches.map(g =>
+    `<div class="dept-search-result" onmousedown="addGroupToDept('${deptId}','${g.id}')">${esc(g.displayName)}</div>`
+  ).join('');
+  results.classList.add('open');
+}
+function closeDeptSearch(deptId) {
+  const el = document.getElementById('dsr-' + deptId);
+  if (el) el.classList.remove('open');
+}
+function addGroupToDept(deptId, groupId) {
+  const dept = departments.find(d => d.id === deptId);
+  if (!dept || dept.groupIds.includes(groupId)) return;
+  dept.groupIds.push(groupId); saveDepts(); renderDeptList(); renderSidebar();
+}
+
+// ── Visualize departments ──────────────────────────────────────────────────
+async function visualizeDepartments() {
+  if (activeDeptIds.size === 0) return;
+  const allGroupIds = new Set();
+  [...activeDeptIds].forEach(deptId => {
+    const dept = departments.find(d => d.id === deptId);
+    if (dept) dept.groupIds.forEach(id => allGroupIds.add(id));
+  });
+  const toFetch = [...allGroupIds].filter(id => !groupCache[id]);
+  if (toFetch.length > 0) {
+    show('state-loading');
+    setLoading(`Loading members for ${toFetch.length} group(s)…`);
+    await Promise.all(toFetch.map(id => fetchGroupData(id)));
+  }
+  hide('state-loading');
+  document.getElementById('legend').style.display = 'flex';
+  renderForceGraph(null, [...activeDeptIds]);
+}
+
+// ── Force graph (unified for groups + departments view) ────────────────────
+function renderForceGraph(groupIds, deptIds) {
   const svg = d3.select('#tree-svg');
   svg.selectAll('*').remove();
-
-  const container = document.getElementById('tree-svg').parentElement;
-  const W = container.clientWidth;
-  const H = container.clientHeight;
-
+  const W = svg.node().parentElement.clientWidth;
+  const H = svg.node().parentElement.clientHeight;
   const g = svg.append('g');
   const zoom = d3.zoom().scaleExtent([0.1, 4]).on('zoom', e => g.attr('transform', e.transform));
   svg.call(zoom);
 
-  // Build flat nodes + links arrays across all selected groups
-  const nodes = [];
-  const links = [];
-  const seenUsers = new Map(); // userId → node index (for shared member dedup)
+  const nodes = [], links = [];
+  const seenGroups = new Map();
+  const seenUsers  = new Map();
 
-  [...activeGroupIds].forEach(groupId => {
-    const groupMeta = groups.find(x => x.id === groupId);
-    if (!groupMeta) return;
-    const members = groupCache[groupId] || [];
-
-    // Group hub node
-    const groupNode = {
-      id: groupId,
-      name: groupMeta.displayName,
-      type: 'group',
-      upn: '',
-    };
-    nodes.push(groupNode);
-    const groupIdx = nodes.length - 1;
-
-    members.forEach(m => {
-      const type = m.userType === 'Guest' ? 'guest' : 'member';
-      let memberIdx;
-
-      if (seenUsers.has(m.id)) {
-        // Member already exists (shared across groups) — just add a link
-        memberIdx = seenUsers.get(m.id);
-      } else {
-        nodes.push({
-          id: m.id,
-          name: m.displayName || m.mail || 'Unknown',
-          upn: m.userPrincipalName || '',
-          type,
-        });
-        memberIdx = nodes.length - 1;
-        seenUsers.set(m.id, memberIdx);
-      }
-
-      links.push({ source: groupIdx, target: memberIdx, type });
+  if (deptIds) {
+    // Department → group → member hierarchy
+    deptIds.forEach(deptId => {
+      const dept = departments.find(d => d.id === deptId);
+      if (!dept) return;
+      nodes.push({ id: dept.id, name: dept.name, type: 'dept', color: dept.color, upn: '' });
+      const deptIdx = nodes.length - 1;
+      dept.groupIds.forEach(groupId => {
+        const gm = groups.find(x => x.id === groupId);
+        if (!gm) return;
+        let groupIdx;
+        if (seenGroups.has(groupId)) {
+          groupIdx = seenGroups.get(groupId);
+        } else {
+          nodes.push({ id: groupId, name: gm.displayName, type: 'group', upn: '' });
+          groupIdx = nodes.length - 1;
+          seenGroups.set(groupId, groupIdx);
+        }
+        links.push({ source: deptIdx, target: groupIdx, type: 'dept' });
+        (groupCache[groupId] || []).forEach(m => addMemberNode(m, groupIdx, nodes, links, seenUsers));
+      });
     });
-  });
+  } else {
+    // Flat group → member
+    groupIds.forEach(groupId => {
+      const gm = groups.find(x => x.id === groupId);
+      if (!gm) return;
+      nodes.push({ id: groupId, name: gm.displayName, type: 'group', upn: '' });
+      const groupIdx = nodes.length - 1;
+      (groupCache[groupId] || []).forEach(m => addMemberNode(m, groupIdx, nodes, links, seenUsers));
+    });
+  }
 
-  // Force simulation — shorter link distance keeps members close
-  const memberCount = nodes.filter(n => n.type !== 'group').length;
-  const linkDist = memberCount > 80 ? 55 : memberCount > 30 ? 70 : 90;
+  const memberCount = nodes.filter(n => n.type === 'member' || n.type === 'guest').length;
+  const linkDist    = memberCount > 80 ? 55 : memberCount > 30 ? 70 : 90;
 
   const simulation = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id((d, i) => i).distance(linkDist).strength(0.8))
-    .force('charge', d3.forceManyBody().strength(memberCount > 60 ? -80 : -120))
-    .force('center', d3.forceCenter(W / 2, H / 2))
-    .force('collision', d3.forceCollide().radius(d => d.type === 'group' ? 24 : 14));
+    .force('link',      d3.forceLink(links).id((d,i) => i).distance(d => d.type === 'dept' ? 130 : linkDist).strength(0.8))
+    .force('charge',    d3.forceManyBody().strength(memberCount > 60 ? -80 : -120))
+    .force('center',    d3.forceCenter(W / 2, H / 2))
+    .force('collision', d3.forceCollide().radius(d => d.type === 'dept' ? 30 : d.type === 'group' ? 22 : 14));
 
-  // Links
   const link = g.append('g').selectAll('line')
-    .data(links)
-    .join('line')
-    .attr('class', d => 'link ' + (d.type === 'guest' ? 'guest-link' : 'member-link'))
-    .attr('stroke-width', 1);
+    .data(links).join('line')
+    .attr('class', d => 'link ' + (d.type === 'dept' ? 'dept-link' : d.type === 'guest' ? 'guest-link' : 'member-link'));
 
-  // Nodes
   const node = g.append('g').selectAll('g')
-    .data(nodes)
-    .join('g')
+    .data(nodes).join('g')
     .attr('class', d => 'node ' + d.type)
     .style('cursor', 'pointer')
     .on('mousemove', showTooltip)
     .on('mouseleave', hideTooltip)
     .call(d3.drag()
-      .on('start', (event, d) => { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on('drag',  (event, d) => { d.fx = event.x; d.fy = event.y; })
-      .on('end',   (event, d) => { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+      .on('start', (ev,d) => { if (!ev.active) simulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag',  (ev,d) => { d.fx=ev.x; d.fy=ev.y; })
+      .on('end',   (ev,d) => { if (!ev.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; })
     );
 
   node.append('circle')
-    .attr('r', d => d.type === 'group' ? 18 : 9);
+    .attr('r', d => d.type==='dept' ? 22 : d.type==='group' ? 14 : 8)
+    .style('fill',   d => d.type==='dept' ? d.color+'22' : null)
+    .style('stroke', d => d.type==='dept' ? d.color : null);
 
   node.append('text')
-    .attr('dy', d => d.type === 'group' ? 30 : 20)
+    .attr('dy',           d => d.type==='dept' ? 36 : d.type==='group' ? 26 : 18)
     .attr('text-anchor', 'middle')
-    .style('font-size', d => d.type === 'group' ? '12px' : '10px')
-    .text(d => truncate(d.data ? d.data.name : d.name, d.type === 'group' ? 20 : 14));
+    .style('font-size',  d => d.type==='dept' ? '13px' : d.type==='group' ? '11px' : '10px')
+    .style('font-weight',d => d.type==='dept' ? '600' : '400')
+    .text(d => truncate(d.name, d.type==='dept' ? 22 : d.type==='group' ? 18 : 14));
 
   simulation.on('tick', () => {
-    link
-      .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
-      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
-    node.attr('transform', d => `translate(${d.x},${d.y})`);
+    link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    node.attr('transform', d=>`translate(${d.x},${d.y})`);
   });
+}
+
+function addMemberNode(m, groupIdx, nodes, links, seenUsers) {
+  const type = m.userType === 'Guest' ? 'guest' : 'member';
+  let memberIdx;
+  if (seenUsers.has(m.id)) {
+    memberIdx = seenUsers.get(m.id);
+  } else {
+    nodes.push({ id: m.id, name: m.displayName || m.mail || 'Unknown', upn: m.userPrincipalName || '', type });
+    memberIdx = nodes.length - 1;
+    seenUsers.set(m.id, memberIdx);
+  }
+  links.push({ source: groupIdx, target: memberIdx, type });
 }
 
 // ── Tooltip ────────────────────────────────────────────────────────────────
 function showTooltip(event, d) {
+  const typeLabel = { dept: 'Department', group: 'Teams Group', member: 'Member', guest: 'Guest User' };
+  document.getElementById('tip-name').textContent = d.name || '';
+  document.getElementById('tip-type').textContent = typeLabel[d.type] || d.type;
+  document.getElementById('tip-upn').textContent  = d.upn || '—';
   const tip = document.getElementById('tooltip');
-  const name = d.name || (d.data && d.data.name) || '';
-  const type = d.type || (d.data && d.data.type) || '';
-  const upn  = d.upn  || (d.data && d.data.upn)  || '';
-  document.getElementById('tip-name').textContent = name;
-  document.getElementById('tip-type').textContent = { group: 'Teams Group', subgroup: 'Nested Group', member: 'Member', guest: 'Guest User' }[type] || type;
-  document.getElementById('tip-upn').textContent  = upn || '—';
   tip.classList.add('visible');
   tip.style.left = (event.clientX + 14) + 'px';
   tip.style.top  = (event.clientY - 10) + 'px';
 }
-function hideTooltip() {
-  document.getElementById('tooltip').classList.remove('visible');
-}
+function hideTooltip() { document.getElementById('tooltip').classList.remove('visible'); }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function show(id) {
@@ -751,11 +879,11 @@ function show(id) {
     document.getElementById(s).classList.toggle('hidden', s !== id);
   });
 }
-function hide(id) { document.getElementById(id).classList.add('hidden'); }
+function hide(id)        { document.getElementById(id).classList.add('hidden'); }
 function setLoading(msg) { document.getElementById('loading-detail').textContent = msg; }
-function clearSvg() { d3.select('#tree-svg').selectAll('*').remove(); }
-function truncate(s, n) { return s && s.length > n ? s.slice(0, n) + '…' : s; }
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function clearSvg()      { d3.select('#tree-svg').selectAll('*').remove(); }
+function truncate(s,n)   { return s && s.length > n ? s.slice(0,n)+'…' : s; }
+function esc(s)          { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 </script>
 </body>
 </html>
